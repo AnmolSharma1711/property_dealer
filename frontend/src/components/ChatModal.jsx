@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import apiClient from '../utils/api';
 
 export default function ChatModal({ property, onClose, onChatCreated }) {
   const [message, setMessage] = useState('');
@@ -20,20 +20,14 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
       }
 
       // Create chat
-      const chatRes = await axios.post(
-        'http://localhost:8000/api/chats/',
-        { property: property.id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      const chatRes = await apiClient.post('/chats/', { property: property.id });
       const chat = chatRes.data;
 
       // Send initial message if provided
       if (message.trim()) {
-        await axios.post(
-          `http://localhost:8000/api/chats/${chat.id}/send_message/`,
-          { message },
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.post(
+          `/chats/${chat.id}/send_message/`,
+          { message }
         );
       }
 

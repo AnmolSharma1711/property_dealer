@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { apiClient } from '../utils/api';
 
 export default function ChatWindow({ chat, onClose }) {
   const [messages, setMessages] = useState([]);
@@ -24,11 +24,7 @@ export default function ChatWindow({ chat, onClose }) {
 
   const fetchMessages = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const res = await axios.get(
-        `http://localhost:8000/api/chats/${chat.id}/messages/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await apiClient.get(`/chats/${chat.id}/messages/`);
       setMessages(res.data);
       setLoading(false);
     } catch (err) {
@@ -42,11 +38,9 @@ export default function ChatWindow({ chat, onClose }) {
     if (!newMessage.trim()) return;
 
     try {
-      const token = localStorage.getItem('authToken');
-      await axios.post(
-        `http://localhost:8000/api/chats/${chat.id}/send_message/`,
-        { message: newMessage },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await apiClient.post(
+        `/chats/${chat.id}/send_message/`,
+        { message: newMessage }
       );
       setNewMessage('');
       fetchMessages();
