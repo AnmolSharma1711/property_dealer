@@ -1,8 +1,6 @@
 django
 djangorestframework
 django-cors-headers
-celery
-redis
 requests
 python-dotenv
 django-autocomplete-light>=3.9.7

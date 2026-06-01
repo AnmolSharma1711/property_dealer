@@ -1,29 +1,22 @@
-name: Celery Worker - DEPRECATED - Use Render Cron Job Instead
+name: ❌ DEPRECATED - Celery Worker (No Longer Used)
 
-# ⚠️ DEPRECATED: This workflow is no longer recommended.
-# Render now runs Celery tasks via native Cron Job service in render.yaml
-# which is more reliable and doesn't require GitHub Secrets.
+# ⚠️ DEPRECATED - Celery has been removed from the application
+# 
+# AI analysis now runs synchronously in background threads
+# instead of using Celery task queues. This workflow is no longer needed.
 #
-# To disable this workflow:
-# 1. Delete this file, or
-# 2. Keep it disabled (commented out) as backup
-# 3. Verify render.yaml has the cron service configured
+# To delete: rm .github/workflows/celery-worker.yml
 
 on:
-  workflow_dispatch:  # Manual trigger only - disabled automatic scheduling
+  workflow_dispatch:  # Manual trigger only - disabled
 
 jobs:
-  deprecated-notice:
+  deprecated:
     runs-on: ubuntu-latest
     steps:
-      - name: ⚠️ Notice
+      - name: ❌ This workflow is deprecated
         run: |
-          echo "WARNING: This GitHub Actions workflow is deprecated!"
-          echo "Celery tasks now run via Render Cron Job instead."
-          echo "This ensures:"
-          echo "  ✓ Better reliability"
-          echo "  ✓ No GitHub Secrets needed"
-          echo "  ✓ Runs on Render infrastructure"
-          echo ""
-          echo "To verify setup, check render.yaml for the 'broker-celery-worker' cron service"
+          echo "This workflow has been deprecated."
+          echo "Celery and Redis have been removed from the application."
+          echo "AI analysis now runs synchronously in background threads."
           exit 1

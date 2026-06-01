@@ -1,10 +1,8 @@
 import os
 import json
 import requests
-from celery import shared_task
 from .models import Locality, LocalityProfile
 
-@shared_task
 def enrich_locality_pipeline(locality_id):
     debug_file = os.path.join(os.path.dirname(__file__), "task_debug.log")
     try:

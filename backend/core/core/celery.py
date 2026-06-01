@@ -1,22 +1,7 @@
-import os
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
-
-try:
-    from celery import Celery
-    
-    app = Celery('core')
-    app.config_from_object('django.conf:settings', namespace='CELERY')
-    app.autodiscover_tasks()
-except ImportError:
-    # Celery not installed - create a mock app for development
-    class MockCeleryApp:
-        def task(self, *args, **kwargs):
-            def decorator(func):
-                return func
-            return decorator
-        
-        def autodiscover_tasks(self):
-            pass
-    
-    app = MockCeleryApp()
+# ❌ DEPRECATED - Celery has been removed from the application
+#
+# AI analysis now runs synchronously in background threads
+# instead of using Celery task queues.
+#
+# This file is no longer used and can be safely deleted.
+# See RENDER_SIMPLE_GUIDE.md for deployment instructions.

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+import threading
 from .models import Locality, LocalityProfile, Property, PropertyImage, PropertyHistory, Chat, ChatMessage
 from .tasks import enrich_locality_pipeline
 from .widgets import LocationAutocompleteWidget
@@ -72,13 +73,14 @@ class LocalityAdmin(admin.ModelAdmin):
         count = 0
         for locality in queryset:
             try:
-                # Queue the Celery task
-                enrich_locality_pipeline.delay(locality.id)
+                # Start AI enrichment in background thread
+                thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
+                thread.start()
                 count += 1
             except Exception as e:
                 self.message_user(request, f'Error processing {locality.name}: {str(e)}', level='ERROR')
         
-        self.message_user(request, f'AI analysis queued for {count} locality(ies). Check back in 30 seconds.')
+        self.message_user(request, f'AI analysis started for {count} locality(ies). Will complete in 2-5 minutes.')
     
     trigger_ai_analysis.short_description = "Trigger AI Analysis Pipeline"
 

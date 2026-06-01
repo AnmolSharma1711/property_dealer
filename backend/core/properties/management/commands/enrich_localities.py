@@ -9,12 +9,13 @@ Usage:
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
+import threading
 from properties.models import Locality
 from properties.tasks import enrich_locality_pipeline
 
 
 class Command(BaseCommand):
-    help = 'Queue Celery tasks to enrich localities with AI analysis'
+    help = 'Start AI analysis for localities (runs in background threads)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -33,10 +34,11 @@ class Command(BaseCommand):
             # Enrich specific locality
             try:
                 locality = Locality.objects.get(id=options['id'])
-                self.stdout.write(f"Queuing task for: {locality.name} (ID: {locality.id})")
-                task_id = enrich_locality_pipeline.delay(locality.id)
+                self.stdout.write(f"Starting AI analysis for: {locality.name} (ID: {locality.id})")
+                thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
+                thread.start()
                 self.stdout.write(
-                    self.style.SUCCESS(f"✓ Task queued: {task_id}")
+                    self.style.SUCCESS(f"✓ Background thread started (will complete in 2-5 minutes)")
                 )
             except Locality.DoesNotExist:
                 self.stdout.write(
@@ -47,14 +49,15 @@ class Command(BaseCommand):
             # Re-enrich all localities
             localities = Locality.objects.all()
             count = localities.count()
-            self.stdout.write(f"Queuing tasks for {count} localities...")
+            self.stdout.write(f"Starting AI analysis for {count} localities...")
             
             for locality in localities:
-                task_id = enrich_locality_pipeline.delay(locality.id)
-                self.stdout.write(f"  → {locality.name}: {task_id}")
+                thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
+                thread.start()
+                self.stdout.write(f"  → {locality.name}: thread started")
             
             self.stdout.write(
-                self.style.SUCCESS(f"✓ Queued {count} tasks")
+                self.style.SUCCESS(f"✓ Started {count} background threads (will complete over next 2-5 minutes each)")
             )
 
         else:
@@ -68,13 +71,13 @@ class Command(BaseCommand):
                 )
                 return
             
-            self.stdout.write(f"Queuing tasks for {count} localities without analysis...")
+            self.stdout.write(f"Starting AI analysis for {count} localities without analysis...")
             
             for locality in localities:
-                task_id = enrich_locality_pipeline.delay(locality.id)
-                self.stdout.write(f"  → {locality.name} (ID: {locality.id}): {task_id}")
+                thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
+                thread.start()
+                self.stdout.write(f"  → {locality.name} (ID: {locality.id}): thread started")
             
             self.stdout.write(
-                self.style.SUCCESS(f"✓ Queued {count} tasks")
+                self.style.SUCCESS(f"✓ Started {count} background threads (will complete over next 2-5 minutes each)")
             )
-            self.stdout.write("Tasks will be processed by GitHub Actions every 5 minutes")

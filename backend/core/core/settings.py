@@ -98,18 +98,3 @@ CORS_ALLOWED_ORIGINS = [
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5174')
 if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
-
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-
-# Windows compatibility: use solo pool instead of prefork
-import platform
-if platform.system() == 'Windows':
-    CELERY_WORKER_POOL = 'solo'
-
-# Enable eager mode for synchronous task execution (useful when Redis/broker unavailable)
-# Set to False when using a real Celery worker with message broker
-CELERY_TASK_ALWAYS_EAGER = False
-CELERY_TASK_EAGER_PROPAGATES = False

@@ -27,21 +27,14 @@ services:
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
 
-  # Celery Worker - Cron Job (Every 15 minutes)
-  - type: cron
-    name: broker-celery-worker
-    runtime: python
-    region: ohio
-    plan: starter
-    repo: https://github.com/AnmolSharma1711/property_dealer.git
-    branch: main
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend/core && celery -A core worker -l info --concurrency=1 -t 300
-    schedule: "*/15 * * * *"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12
-      - key: DEBUG
-        value: "False"
-      - key: PYTHONUNBUFFERED
-        value: "1"
+# ✅ Celery Removed - AI Analysis Now Runs Synchronously
+# - User triggers analysis via API
+# - Backend processes AI enrichment immediately in background thread
+# - No external Redis or Celery worker needed
+# - No queue delays - instant processing
+#
+# Environment variables needed:
+# - GROQ_API_KEY: Your Groq API key
+# - SERPAPI_API_KEY: Your SerpAPI key
+# - SECRET_KEY: Django secret
+# - DATABASE_URL: PostgreSQL connection string

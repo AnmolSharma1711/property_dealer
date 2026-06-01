@@ -37,28 +37,10 @@ class LocalityViewSet(viewsets.ModelViewSet):
 
         if created:
             print(f"✓ New locality created: {locality.id} ({name}, {city})")
-            debug_file = "d:\\Broker\\backend\\core\\views_debug.log"
-            with open(debug_file, "a") as f:
-                f.write(f"\n[VIEW] Created locality {locality.id}\n")
-            # Try async first, then fall back to background thread
-            try:
-                print(f"→ Attempting to queue Celery task for locality {locality.id}")
-                with open(debug_file, "a") as f:
-                    f.write(f"[VIEW] Calling enrich_locality_pipeline.delay({locality.id})\n")
-                task_id = enrich_locality_pipeline.delay(locality.id)
-                print(f"✓ Task queued successfully with ID: {task_id}")
-                with open(debug_file, "a") as f:
-                    f.write(f"[VIEW] Task queued: {task_id}\n")
-            except Exception as e:
-                print(f"✗ Celery task failed: {str(e)}, falling back to background thread")
-                with open(debug_file, "a") as f:
-                    f.write(f"[VIEW] Celery failed: {str(e)}\n")
-                # Run in background thread so HTTP response isn't blocked
-                thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
-                thread.start()
-                print(f"✓ Background thread started for locality {locality.id}")
-                with open(debug_file, "a") as f:
-                    f.write(f"[VIEW] Background thread started\n")
+            # Run AI enrichment in background thread (non-blocking)
+            thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
+            thread.start()
+            print(f"✓ Background thread started for AI analysis of locality {locality.id}")
 
         serializer = self.get_serializer(locality)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -75,11 +57,12 @@ class LocalityViewSet(viewsets.ModelViewSet):
             })
         
         try:
-            task_id = enrich_locality_pipeline.delay(locality.id)
+            # Run AI enrichment in background thread
+            thread = threading.Thread(target=enrich_locality_pipeline, args=(locality.id,), daemon=True)
+            thread.start()
             return Response({
-                "status": "queued",
-                "task_id": str(task_id),
-                "message": f"AI analysis queued for '{locality.name}'. Will complete in 0-5 minutes."
+                "status": "processing",
+                "message": f"AI analysis started for '{locality.name}'. Will complete in 2-5 minutes."
             })
         except Exception as e:
             return Response({

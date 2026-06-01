@@ -1,6 +1,8 @@
-# Back to Render - Simple Cron Job Deployment
+# Render Deployment Guide - Simple Manual Steps
 
-## 🚀 Simple Step-by-Step
+> **⚠️ Updated**: Celery has been removed. AI analysis now runs synchronously in background threads.
+
+## 🚀 Step-by-Step Deployment
 
 ### Step 1: Create PostgreSQL Database First
 
@@ -38,17 +40,16 @@
    - `DEBUG` = `False`
    - `PYTHONUNBUFFERED` = `1`
    - `PYTHON_VERSION` = `3.12`
-   - `DATABASE_URL` = (paste from PostgreSQL)
-   - `SECRET_KEY` = (generate random string)
-   - `REDIS_URL` = (your Redis URL)
-   - `GROQ_API_KEY` = (your API key)
-   - `SERPAPI_API_KEY` = (your API key)
+   - `DATABASE_URL` = (paste from PostgreSQL Internal Connection String)
+   - `SECRET_KEY` = (generate random string, e.g., `python -c "import secrets; print(secrets.token_urlsafe(50))"`)
+   - `GROQ_API_KEY` = (your Groq API key from https://console.groq.com)
+   - `SERPAPI_API_KEY` = (your SerpAPI key from https://serpapi.com)
    - `ADMIN_USERNAME` = `admin`
-   - `ADMIN_PASSWORD` = (your password)
+   - `ADMIN_PASSWORD` = (your secure password)
    - `ADMIN_EMAIL` = `admin@example.com`
 
 5. Click **"Create Web Service"**
-6. Wait 5-10 minutes for deploy
+6. Wait 5-10 minutes for deploy ✅
 
 ---
 
@@ -67,37 +68,64 @@
 
 4. Click **"Advanced"** → **"Add Environment Variables":**
    - `VITE_API_URL` = `https://broker-backend.onrender.com/api`
-     (replace with your actual backend URL)
+     (replace `broker-backend` with your actual backend service name)
 
 5. Click **"Create"**
-6. Wait 3-5 minutes
+6. Wait 3-5 minutes for deploy ✅
 
 ---
 
-### Step 4: Create Celery Cron Job
+## 🎉 Done! 
 
-1. Click **"New +"** → **"Cron Job"**
-2. Select your repo: `AnmolSharma1711/property_dealer`
-3. Fill in:
-   - **Name:** `broker-celery-worker`
-   - **Branch:** `main`
-   - **Schedule:** `*/15 * * * *` (every 15 minutes)
-   - **Runtime:** Python
-   - **Region:** Ohio
-   - **Build Command:**
-     ```
-     pip install -r backend/requirements.txt
-     ```
-   - **Run Command:**
-     ```
-     cd backend/core && celery -A core worker -l info --concurrency=1 -t 300
-     ```
+Your app is now deployed with:
+- ✅ PostgreSQL database (persists across restarts)
+- ✅ Django backend (with AI enrichment)
+- ✅ React frontend (static site)
+- ✅ **NO Celery needed** - AI processing runs in background threads
 
-4. Click **"Advanced"** → **"Add Environment Variables"** (SAME as backend):
-   - `DEBUG` = `False`
-   - `PYTHONUNBUFFERED` = `1`
-   - `PYTHON_VERSION` = `3.12`
-   - `DATABASE_URL` = (paste from PostgreSQL)
+### How AI Analysis Works Now
+
+1. User creates a **Locality** via frontend
+2. Backend starts processing AI enrichment in a **background thread**
+3. Thread:
+   - Fetches POI data from SerpAPI
+   - Analyzes properties using Groq LLM
+   - Saves enriched data to database
+4. Frontend checks `/api/localities/{id}/` until `profile` data appears (2-5 minutes)
+
+### Testing the Deployment
+
+1. **Frontend:** Visit your frontend URL (e.g., `https://broker-frontend.onrender.com`)
+2. **Backend API:** Visit `https://broker-backend.onrender.com/api/localities/`
+3. **Admin Panel:** Visit `https://broker-backend.onrender.com/admin/` (use credentials from Step 2)
+4. **Create Test Locality:**
+   ```bash
+   curl -X POST https://broker-backend.onrender.com/api/localities/ \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Test Area",
+       "city": "Test City",
+       "latitude": 40.7128,
+       "longitude": -74.0060
+     }'
+   ```
+5. **Check Status:** Visit `/api/localities/{id}/` and look for `profile` field (appears after 2-5 minutes)
+
+---
+
+## ❌ What Was Removed
+
+- ~~Celery~~ - no longer needed
+- ~~Redis~~ - no longer needed  
+- ~~Cron jobs~~ - no longer needed
+- ~~GitHub Actions workflow~~ - disabled
+
+## 📝 Notes
+
+- **Free Database:** PostgreSQL on Render free tier includes 256MB storage
+- **AI Processing:** Now synchronous, runs in backend thread (2-5 minutes per locality)
+- **Cost:** $0 for MVP (all free tier services)
+- **Persistence:** All data persists across Render restarts
    - `SECRET_KEY` = (same as backend)
    - `REDIS_URL` = (same as backend)
    - `GROQ_API_KEY` = (same as backend)
