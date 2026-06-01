@@ -1,10 +1,4 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: broker-db
-    plan: starter
-    region: ohio
-
   # Django Backend
   - type: web
     name: broker-backend
@@ -35,17 +29,14 @@ services:
       - key: ADMIN_EMAIL
         value: admin@example.com
       - key: DATABASE_URL
-        fromDatabase:
-          name: broker-db
-          property: connectionString
+        sync: false
       - key: PYTHONUNBUFFERED
         value: "1"
 
-  # React Frontend - Static Site
+  # React Frontend - Static Site (Global CDN, no region needed)
   - type: web
     name: broker-frontend
     runtime: static
-    region: ohio
     plan: starter
     repo: https://github.com/AnmolSharma1711/property_dealer.git
     branch: main
@@ -86,21 +77,21 @@ services:
       - key: ADMIN_EMAIL
         value: admin@example.com
       - key: DATABASE_URL
-        fromDatabase:
-          name: broker-db
-          property: connectionString
+        sync: false
       - key: PYTHONUNBUFFERED
         value: "1"
 
-# ✅ Celery worker now runs via Render Cron Job (more reliable)
-# - Automatic scheduling on Render infrastructure
-# - Data persists with PostgreSQL (broker-db)
-# 
-# ⚠️  IMPORTANT: After Blueprint deployment:
-# 1. Add persistent disk to backend manually via Render Dashboard
-#    - Go to broker-backend → Settings → Disks
-#    - Create disk: name=broker-data, mount=/var/data, size=5GB
-# 2. Set environment variables that reference external services:
-#    - REDIS_URL: your Redis connection string
-#    - GROQ_API_KEY: your API key
-#    - SERPAPI_API_KEY: your API key
+# ✅ BEFORE DEPLOYING:
+# 1. Create PostgreSQL database manually:
+#    - Go to Render → New → PostgreSQL
+#    - Name: broker-db
+#    - Plan: Starter
+#    - Copy the Internal Connection String
+#    - Use this as DATABASE_URL for backend and cron
+#
+# ✅ AFTER BLUEPRINT DEPLOYMENT:
+# 1. Set DATABASE_URL environment variable on backend and cron-worker
+# 2. Set REDIS_URL, GROQ_API_KEY, SERPAPI_API_KEY on backend and cron-worker
+# 3. Add persistent disk to backend:
+#    - Settings → Disks → Create
+#    - Name: broker-data, Mount: /var/data, Size: 5GB
