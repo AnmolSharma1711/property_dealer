@@ -11,29 +11,13 @@ services:
     startCommand: cd backend/core && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.4
+        value: 3.12
       - key: DEBUG
         value: "False"
-      - key: SECRET_KEY
-        generateValue: true
-      - key: REDIS_URL
-        sync: false
-      - key: GROQ_API_KEY
-        sync: false
-      - key: SERPAPI_API_KEY
-        sync: false
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        generateValue: true
-      - key: ADMIN_EMAIL
-        value: admin@example.com
-      - key: DATABASE_URL
-        sync: false
       - key: PYTHONUNBUFFERED
         value: "1"
 
-  # React Frontend - Static Site (Global CDN, no region needed)
+  # React Frontend (Static)
   - type: web
     name: broker-frontend
     runtime: static
@@ -42,16 +26,13 @@ services:
     branch: main
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://broker-backend.onrender.com/api
 
-  # Celery Worker - Cron Job
+  # Celery Worker - Cron Job (Every 15 minutes)
   - type: cron
     name: broker-celery-worker
     runtime: python
-    plan: starter
     region: ohio
+    plan: starter
     repo: https://github.com/AnmolSharma1711/property_dealer.git
     branch: main
     buildCommand: pip install -r backend/requirements.txt
@@ -59,39 +40,8 @@ services:
     schedule: "*/15 * * * *"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.4
+        value: 3.12
       - key: DEBUG
         value: "False"
-      - key: SECRET_KEY
-        generateValue: true
-      - key: REDIS_URL
-        sync: false
-      - key: GROQ_API_KEY
-        sync: false
-      - key: SERPAPI_API_KEY
-        sync: false
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        generateValue: true
-      - key: ADMIN_EMAIL
-        value: admin@example.com
-      - key: DATABASE_URL
-        sync: false
       - key: PYTHONUNBUFFERED
         value: "1"
-
-# ✅ BEFORE DEPLOYING:
-# 1. Create PostgreSQL database manually:
-#    - Go to Render → New → PostgreSQL
-#    - Name: broker-db
-#    - Plan: Starter
-#    - Copy the Internal Connection String
-#    - Use this as DATABASE_URL for backend and cron
-#
-# ✅ AFTER BLUEPRINT DEPLOYMENT:
-# 1. Set DATABASE_URL environment variable on backend and cron-worker
-# 2. Set REDIS_URL, GROQ_API_KEY, SERPAPI_API_KEY on backend and cron-worker
-# 3. Add persistent disk to backend:
-#    - Settings → Disks → Create
-#    - Name: broker-data, Mount: /var/data, Size: 5GB

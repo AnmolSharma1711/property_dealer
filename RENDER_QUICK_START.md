@@ -1,13 +1,20 @@
-# Render Deployment Quick Start
+# Deployment Guide - Property Broker AI
 
-## 🚀 Quick Deployment Steps
+## ⭐ Recommended: Deploy to Railway.app (No Card Required)
 
-Follow these steps in order to deploy your Property Broker AI app on Render.
+**Important:** Render now requires card details. Use **Railway instead** - it's free and has no payment required.
 
-### Prerequisites
-✅ GitHub account with your repo pushed  
-✅ Render account (free at https://render.com)  
-✅ Environment variables ready
+👉 **See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for complete Railway deployment steps**
+
+Railway benefits:
+- ✅ Free tier with $5/month credit
+- ✅ No card required to start
+- ✅ PostgreSQL database included
+- ✅ Automatic GitHub deployment
+- ✅ Better for free/low-cost projects
+- ✅ Simpler setup than Render
+
+**Quick start:** Go to https://railway.app → Sign in with GitHub → Deploy from repo
 
 ---
 
@@ -17,17 +24,14 @@ Choose one approach below:
 
 ### Option A: Quick Deploy with render.yaml (RECOMMENDED ⭐)
 
-Use Infrastructure as Code for one-click deployment:
+**👉 Follow the corrected steps:** See [RENDER_FIXED_BLUEPRINT.md](RENDER_FIXED_BLUEPRINT.md)
 
-- [ ] Commit all changes: `git add . && git commit -m "Deploy" && git push`
-- [ ] Go to Render → New → Web Service
-- [ ] Select your GitHub repo
-- [ ] Scroll to "Infrastructure as Code"
-- [ ] Click "Use render.yaml"
-- [ ] Click "Create"
-- [ ] Wait 15-20 minutes for everything to deploy
-- [ ] All services (Backend, Frontend, Database, Celery) are auto-configured
-- [ ] See [RENDER_CRON_AND_PERSISTENCE.md](RENDER_CRON_AND_PERSISTENCE.md) for details
+This document has:
+- ✅ Fixed render.yaml (all YAML errors resolved)
+- ✅ Correct deployment steps with Blueprint
+- ✅ Post-deployment setup (environment variables, persistent disk)
+- ✅ Verification checklist
+- ✅ Troubleshooting guide
 
 **Time required:** ~20 minutes  
 **Effort:** ⭐ (easiest)

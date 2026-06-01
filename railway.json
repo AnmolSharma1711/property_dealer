@@ -1,0 +1,65 @@
+{
+  "name": "Property Broker AI",
+  "description": "AI-powered property analysis application",
+  "services": [
+    {
+      "name": "postgres",
+      "source": {
+        "type": "postgres"
+      }
+    },
+    {
+      "name": "backend",
+      "source": {
+        "type": "repo",
+        "repo": "https://github.com/AnmolSharma1711/property_dealer.git",
+        "branch": "main",
+        "rootDirectory": "backend/core"
+      },
+      "service": {
+        "numReplicas": 1,
+        "buildCommand": "pip install -r ../requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput && python create_admin.py",
+        "startCommand": "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2",
+        "variables": {
+          "PYTHON_VERSION": "3.12",
+          "DEBUG": "False",
+          "PYTHONUNBUFFERED": "1"
+        }
+      }
+    },
+    {
+      "name": "frontend",
+      "source": {
+        "type": "repo",
+        "repo": "https://github.com/AnmolSharma1711/property_dealer.git",
+        "branch": "main",
+        "rootDirectory": "frontend"
+      },
+      "service": {
+        "buildCommand": "npm install && npm run build",
+        "startCommand": "npm run preview",
+        "variables": {
+          "VITE_API_URL": "${{ services.backend.url }}/api"
+        }
+      }
+    },
+    {
+      "name": "celery-worker",
+      "source": {
+        "type": "repo",
+        "repo": "https://github.com/AnmolSharma1711/property_dealer.git",
+        "branch": "main",
+        "rootDirectory": "backend/core"
+      },
+      "service": {
+        "buildCommand": "pip install -r ../requirements.txt",
+        "startCommand": "celery -A core worker -l info --concurrency=1 -t 300",
+        "variables": {
+          "PYTHON_VERSION": "3.12",
+          "DEBUG": "False",
+          "PYTHONUNBUFFERED": "1"
+        }
+      }
+    }
+  ]
+}
