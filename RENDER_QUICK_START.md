@@ -11,23 +11,46 @@ Follow these steps in order to deploy your Property Broker AI app on Render.
 
 ---
 
-## 📋 Deployment Checklist
+## 📋 Deployment Options
 
-Copy this checklist and check off as you go:
+Choose one approach below:
 
-### 1. Prepare Code
+### Option A: Quick Deploy with render.yaml (RECOMMENDED ⭐)
+
+Use Infrastructure as Code for one-click deployment:
+
+- [ ] Commit all changes: `git add . && git commit -m "Deploy" && git push`
+- [ ] Go to Render → New → Web Service
+- [ ] Select your GitHub repo
+- [ ] Scroll to "Infrastructure as Code"
+- [ ] Click "Use render.yaml"
+- [ ] Click "Create"
+- [ ] Wait 15-20 minutes for everything to deploy
+- [ ] All services (Backend, Frontend, Database, Celery) are auto-configured
+- [ ] See [RENDER_CRON_AND_PERSISTENCE.md](RENDER_CRON_AND_PERSISTENCE.md) for details
+
+**Time required:** ~20 minutes  
+**Effort:** ⭐ (easiest)
+
+---
+
+### Option B: Manual Deploy (Advanced)
+
+Manually create each service. Not recommended unless you need custom configuration.
+
+#### Step 1: Prepare Code
 - [ ] Commit all changes to GitHub: `git add . && git commit -m "ready for deployment" && git push`
 - [ ] Verify `.env.example` exists with all required variables
 - [ ] Check `requirements.txt` has all dependencies
 
-### 2. Create Database
+#### Step 2: Create Database
 - [ ] Go to Render → New → PostgreSQL
 - [ ] Name: `broker-db`
 - [ ] Region: Choose your region
 - [ ] Click Create
 - [ ] **COPY** the Internal Connection String
 
-### 3. Deploy Backend
+#### Step 3: Deploy Backend
 - [ ] Go to Render → New → Web Service
 - [ ] Select your GitHub repo
 - [ ] Name: `broker-backend`
@@ -57,7 +80,7 @@ PYTHONUNBUFFERED=1
 PYTHON_VERSION=3.12.4
 ```
 
-### 4. Deploy Frontend
+#### Step 4: Deploy Frontend
 - [ ] Go to Render → New → Static Site
 - [ ] Select your GitHub repo
 - [ ] Name: `broker-frontend`
@@ -73,35 +96,56 @@ PYTHON_VERSION=3.12.4
 - [ ] Wait 3-5 minutes
 - [ ] Copy the URL (e.g., `broker-frontend.onrender.com`)
 
-### 5. Update CORS (Backend)
+#### Step 5: Update CORS (Backend)
 - [ ] Go back to broker-backend service
 - [ ] Click Environment tab
 - [ ] Add: `FRONTEND_URL=https://broker-frontend.onrender.com`
 - [ ] Click "Manual Deploy" → "Deploy latest commit"
 - [ ] Wait for redeploy
 
-### 6. Deploy Celery Worker (REQUIRED for AI Pipeline) ⚠️
-- [ ] Go to Render → New → Background Worker
-- [ ] Name: `broker-worker`
-- [ ] Build Command: `pip install -r backend/requirements.txt`
-- [ ] Start Command: `cd backend/core && celery -A core worker -l info --concurrency=2`
-- [ ] Region: Same as backend
-- [ ] Add SAME environment variables as backend (all of them):
-  ```
-  DEBUG=False
-  SECRET_KEY=<same as backend>
-  DATABASE_URL=<same as backend>
-  REDIS_URL=<your Redis URL>
-  GROQ_API_KEY=<your API key>
-  SERPAPI_API_KEY=<your API key>
-  ADMIN_USERNAME=admin
-  ADMIN_PASSWORD=<same as backend>
-  ADMIN_EMAIL=<same as backend>
-  PYTHONUNBUFFERED=1
-  PYTHON_VERSION=3.12.4
-  ```
-- [ ] Click Create
-- [ ] Wait 5-10 minutes for deployment
+### 6. Deploy Celery Worker (AUTOMATIC via render.yaml) ⚠️
+
+**✨ NEW: Celery now runs via Render Cron Job!**
+
+The `render.yaml` file includes an automatic cron job for Celery tasks. No manual setup needed!
+
+**What this means:**
+- ✅ Celery tasks run automatically every 15 minutes
+- ✅ More reliable than GitHub Actions
+- ✅ No need for Background Worker service
+- ✅ Runs on Render infrastructure (not GitHub)
+
+**Just deploy using render.yaml (see below) and it's automatically configured!**
+
+---
+
+### 7. Deploy Using render.yaml (RECOMMENDED - Automatic Everything)
+
+This is the **fastest and easiest way**. It sets up everything automatically:
+
+```bash
+# 1. Make sure render.yaml is in your repo root
+# 2. Commit changes
+git add . && git commit -m "Deploy with render.yaml" && git push
+
+# 3. Go to Render Dashboard
+# 4. Click "New +" → "Web Service"
+# 5. Select your GitHub repo
+# 6. Scroll down → "Infrastructure as Code"
+# 7. Click "Use render.yaml" 
+# 8. Select render.yaml file
+# 9. Click "Create"
+```
+
+Render will automatically create:
+- ✅ PostgreSQL Database (broker-db)
+- ✅ Django Backend (broker-backend) with persistent disk storage
+- ✅ React Frontend (broker-frontend)
+- ✅ Celery Worker Cron Job (broker-celery-worker) - runs every 15 minutes
+
+**That's it! No manual steps needed.**
+
+For detailed info on cron jobs and data persistence, see [RENDER_CRON_AND_PERSISTENCE.md](RENDER_CRON_AND_PERSISTENCE.md)
 
 ### 7. Test Your App
 - [ ] Open `https://broker-frontend.onrender.com` in browser
@@ -109,6 +153,55 @@ PYTHON_VERSION=3.12.4
 - [ ] Try creating a chat
 - [ ] Check messages work
 - [ ] Open admin: `https://broker-backend.onrender.com/admin/`
+
+---
+
+## ✅ Verify Deployment
+
+After deployment, verify everything is working:
+
+### Check Backend
+```bash
+curl https://broker-backend.onrender.com/api/localities/
+# Should return JSON data (may be empty on first deploy)
+```
+
+### Check Celery Tasks
+1. Go to Render Dashboard
+2. Click **broker-celery-worker** service
+3. Check **Events** tab - should show scheduled runs every 15 minutes
+4. Check **Logs** tab - should show task processing
+
+Example successful log:
+```
+worker: Ready to accept tasks
+properties.tasks.enrich_locality_pipeline received
+properties.tasks.enrich_locality_pipeline succeeded
+```
+
+### Verify Data Persistence
+The `render.yaml` setup includes:
+- ✅ PostgreSQL database (persists data)
+- ✅ Mounted disk storage on backend (5GB for files/logs)
+- ✅ Automatic Redis backup (via REDIS_URL)
+
+Data will survive Render restarts and service updates.
+
+---
+
+## 📊 Data Persistence Overview
+
+| Component | Persistence | Details |
+|-----------|-------------|---------|
+| PostgreSQL | ✅ Persistent | Primary data storage, automatic backups |
+| Disk Storage | ✅ Persistent | 5GB mounted to backend (/var/data) |
+| Redis | ✅ Persistent | Managed service (external), encrypted |
+| Celery Tasks | ✅ Persistent | Queued tasks stored in Redis |
+| Session Data | ✅ Persistent | Stored in PostgreSQL |
+
+**Bottom line:** All data persists across restarts. No data loss.
+
+See [RENDER_CRON_AND_PERSISTENCE.md](RENDER_CRON_AND_PERSISTENCE.md) for more details.
 
 ---
 
