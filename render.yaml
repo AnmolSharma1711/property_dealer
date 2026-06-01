@@ -41,10 +41,9 @@ services:
       - key: PYTHONUNBUFFERED
         value: "1"
 
-  # React Frontend
-  - type: web
+  # React Frontend - Static Site
+  - type: static_site
     name: broker-frontend
-    runtime: node
     region: ohio
     plan: starter
     repo: https://github.com/AnmolSharma1711/property_dealer.git
