@@ -42,8 +42,9 @@ services:
         value: "1"
 
   # React Frontend - Static Site
-  - type: static_site
+  - type: web
     name: broker-frontend
+    runtime: static
     region: ohio
     plan: starter
     repo: https://github.com/AnmolSharma1711/property_dealer.git
