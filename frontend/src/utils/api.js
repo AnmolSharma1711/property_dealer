@@ -2,26 +2,29 @@ import axios from 'axios';
 
 // Determine API base URL based on environment
 const getApiBaseUrl = () => {
+  let url;
+  
   // If explicitly set via environment variable (build time)
   if (import.meta.env.VITE_API_URL) {
-    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
-    return import.meta.env.VITE_API_URL;
+    url = import.meta.env.VITE_API_URL;
+    console.log('Using VITE_API_URL:', url);
+  } else if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+    // In production on Render static sites
+    url = 'https://property-dealer-gf4c.onrender.com/api';
+    console.log('Detected Render production, using:', url);
+  } else {
+    // In development, use localhost
+    url = 'http://localhost:8000/api';
+    console.log('Development mode, using:', url);
   }
   
-  // In production on Render static sites, construct from window location
-  if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
-    // Frontend: property-dealer-1-0z2d.onrender.com
-    // Backend: property-dealer-gf4c.onrender.com
-    // This is a hardcoded mapping for now
-    const backendUrl = 'https://property-dealer-gf4c.onrender.com/api';
-    console.log('Detected Render production, using backend:', backendUrl);
-    return backendUrl;
+  // Ensure the URL includes /api path
+  if (!url.endsWith('/api') && !url.includes('/api/')) {
+    url = url.endsWith('/') ? url + 'api' : url + '/api';
+    console.log('Appended /api suffix, final URL:', url);
   }
   
-  // In development, use localhost
-  const devUrl = 'http://localhost:8000/api';
-  console.log('Development mode, using:', devUrl);
-  return devUrl;
+  return url;
 };
 
 const API_BASE_URL = getApiBaseUrl();
