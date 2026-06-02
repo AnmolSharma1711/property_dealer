@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { apiClient } from '../utils/api';
+import apiClient from '../utils/api';
 
 export default function ChatWindow({ chat, onClose }) {
   const [messages, setMessages] = useState([]);
