@@ -20,13 +20,13 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
       }
 
       // Create chat
-      const chatRes = await apiClient.post('/chats/', { property: property.id });
+      const chatRes = await apiClient.post('chats/', { property: property.id });
       const chat = chatRes.data;
 
       // Send initial message if provided
       if (message.trim()) {
         await apiClient.post(
-          `/chats/${chat.id}/send_message/`,
+          `chats/${chat.id}/send_message/`,
           { message }
         );
       }

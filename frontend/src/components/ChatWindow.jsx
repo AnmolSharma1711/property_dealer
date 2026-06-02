@@ -24,7 +24,7 @@ export default function ChatWindow({ chat, onClose }) {
 
   const fetchMessages = async () => {
     try {
-      const res = await apiClient.get(`/chats/${chat.id}/messages/`);
+      const res = await apiClient.get(`chats/${chat.id}/messages/`);
       setMessages(res.data);
       setLoading(false);
     } catch (err) {
@@ -39,7 +39,7 @@ export default function ChatWindow({ chat, onClose }) {
 
     try {
       await apiClient.post(
-        `/chats/${chat.id}/send_message/`,
+        `chats/${chat.id}/send_message/`,
         { message: newMessage }
       );
       setNewMessage('');

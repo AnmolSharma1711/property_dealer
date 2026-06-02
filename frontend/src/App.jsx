@@ -19,7 +19,7 @@ export default function App() {
     
     const refreshTimer = setInterval(async () => {
       try {
-        const res = await apiClient.get(`/localities/${selectedLocality.id}/`);
+        const res = await apiClient.get(`localities/${selectedLocality.id}/`);
         setSelectedLocality(res.data);
       } catch (err) {
         console.error("Error refreshing locality:", err);
@@ -31,7 +31,7 @@ export default function App() {
 
   const fetchLocalities = async () => {
     try {
-      const res = await apiClient.get('/localities/');
+      const res = await apiClient.get('localities/');
       setLocalities(res.data);
     } catch (err) {
       console.error("Error fetching localities:", err);
@@ -44,7 +44,7 @@ export default function App() {
     // Trigger AI enrichment if not already done
     if (!loc.profile) {
       try {
-        await apiClient.post(`/localities/${loc.id}/enrich/`);
+        await apiClient.post(`localities/${loc.id}/enrich/`);
         console.log(`✓ AI analysis queued for ${loc.name}`);
       } catch (err) {
         console.error("Error triggering enrichment:", err);
@@ -52,7 +52,7 @@ export default function App() {
     }
     
     try {
-      const res = await apiClient.get(`/localities/${loc.id}/properties/`);
+      const res = await apiClient.get(`localities/${loc.id}/properties/`);
       setProperties(res.data);
     } catch (err) {
       console.error("Error fetching properties for locality:", err);
