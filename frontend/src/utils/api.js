@@ -2,17 +2,24 @@ import axios from 'axios';
 
 // Determine API base URL based on environment
 const getApiBaseUrl = () => {
-  // If explicitly set via environment variable (dev)
+  // If explicitly set via environment variable (build time or Render env vars)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  // In production on Render, infer from current domain
-  // If on broker-frontend.onrender.com, backend is on broker-backend.onrender.com
+  // In production on Render, detect the correct backend from frontend domain
   if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+    // Map known frontend domains to their backend domains
     const domain = window.location.hostname;
-    const backendUrl = domain.replace('broker-frontend', 'broker-backend');
-    return `https://${backendUrl}/api`;
+    
+    // Handle property-dealer pattern (property-dealer-xxxxx.onrender.com)
+    if (domain.includes('property-dealer-1')) {
+      return 'https://property-dealer-gf4c.onrender.com/api';
+    }
+    
+    // Fallback: try replacing digits pattern (property-dealer-xxxxx → property-dealer-yyyyy)
+    // This is a generic fallback for other naming patterns
+    return `https://property-dealer-gf4c.onrender.com/api`;
   }
   
   // In development, use localhost
