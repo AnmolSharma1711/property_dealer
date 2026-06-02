@@ -2,31 +2,30 @@ import axios from 'axios';
 
 // Determine API base URL based on environment
 const getApiBaseUrl = () => {
-  // If explicitly set via environment variable (build time or Render env vars)
+  // If explicitly set via environment variable (build time)
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
   
-  // In production on Render, detect the correct backend from frontend domain
+  // In production on Render static sites, construct from window location
   if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
-    // Map known frontend domains to their backend domains
-    const domain = window.location.hostname;
-    
-    // Handle property-dealer pattern (property-dealer-xxxxx.onrender.com)
-    if (domain.includes('property-dealer-1')) {
-      return 'https://property-dealer-gf4c.onrender.com/api';
-    }
-    
-    // Fallback: try replacing digits pattern (property-dealer-xxxxx → property-dealer-yyyyy)
-    // This is a generic fallback for other naming patterns
-    return `https://property-dealer-gf4c.onrender.com/api`;
+    // Frontend: property-dealer-1-0z2d.onrender.com
+    // Backend: property-dealer-gf4c.onrender.com
+    // This is a hardcoded mapping for now
+    const backendUrl = 'https://property-dealer-gf4c.onrender.com/api';
+    console.log('Detected Render production, using backend:', backendUrl);
+    return backendUrl;
   }
   
   // In development, use localhost
-  return 'http://localhost:8000/api';
+  const devUrl = 'http://localhost:8000/api';
+  console.log('Development mode, using:', devUrl);
+  return devUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
+console.log('API_BASE_URL final value:', API_BASE_URL);
 
 // Create axios instance with default config
 const apiClient = axios.create({
