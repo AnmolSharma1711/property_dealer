@@ -94,7 +94,15 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
 ]
 
-# Allow frontend deployed on Render
+# Use regex patterns to allow any onrender.com domain in production
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.onrender\.com$",
+    r"^http://localhost",
+    r"^http://127.0.0.1",
+]
+
+# Fallback: Add explicit FRONTEND_URL if provided
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5174')
-if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)

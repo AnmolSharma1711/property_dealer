@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import apiClient from './utils/api';
+import apiClient, { API_BASE_URL } from './utils/api';
 import PropertyCard from './components/PropertyCard';
 
 export default function App() {
@@ -217,7 +217,7 @@ export default function App() {
       </main>
 
       <footer className="bg-white border-t border-slate-200 px-8 py-4 text-xs text-slate-500 text-center">
-        <p>Manage properties and localities via <a href="http://localhost:8000/admin/" target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-700 hover:text-slate-900">Django Admin Portal</a></p>
+        <p>Manage properties and localities via <a href={`${API_BASE_URL.replace('/api', '')}/admin/`} target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-700 hover:text-slate-900">Django Admin Portal</a></p>
       </footer>
     </div>
   );
