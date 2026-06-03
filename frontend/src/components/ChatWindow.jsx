@@ -40,7 +40,10 @@ export default function ChatWindow({ chat, onClose }) {
     try {
       await apiClient.post(
         `chats/${chat.id}/send_message/`,
-        { message: newMessage }
+        { 
+          message: newMessage,
+          sender_name: 'Admin' // Send as admin
+        }
       );
       setNewMessage('');
       fetchMessages();
@@ -77,30 +80,35 @@ export default function ChatWindow({ chat, onClose }) {
               <p className="text-krishna-400 text-sm">No messages yet. Start the conversation!</p>
             </div>
           ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${
-                  msg.sender === chat.user ? 'justify-end' : 'justify-start'
-                }`}
-              >
+            messages.map((msg) => {
+              // Determine if message is from visitor/user
+              const isFromVisitor = !msg.sender || (chat.visitor_name && msg.sender_name === chat.visitor_name);
+              
+              return (
                 <div
-                  className={`px-4 py-2 rounded-lg max-w-xs border-2 ${
-                    msg.sender === chat.user
-                      ? 'bg-gradient-krishna text-white border-krishna-400 rounded-br-none'
-                      : 'bg-white/80 text-krishna-900 border-peacock-300 rounded-bl-none'
+                  key={msg.id}
+                  className={`flex ${
+                    isFromVisitor ? 'justify-start' : 'justify-end'
                   }`}
                 >
-                  <p className="text-xs font-semibold mb-1 opacity-75">
-                    {msg.sender_name}
-                  </p>
-                  <p className="text-sm">{msg.message}</p>
-                  <p className="text-xs mt-1 opacity-50">
-                    {new Date(msg.created_at).toLocaleTimeString()}
-                  </p>
+                  <div
+                    className={`px-4 py-2 rounded-lg max-w-xs border-2 ${
+                      isFromVisitor
+                        ? 'bg-white/80 text-krishna-900 border-peacock-300 rounded-bl-none'
+                        : 'bg-gradient-krishna text-white border-krishna-400 rounded-br-none'
+                    }`}
+                  >
+                    <p className="text-xs font-semibold mb-1 opacity-75">
+                      {msg.sender_name}
+                    </p>
+                    <p className="text-sm">{msg.message}</p>
+                    <p className="text-xs mt-1 opacity-50">
+                      {new Date(msg.created_at).toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>

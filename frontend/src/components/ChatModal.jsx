@@ -2,32 +2,63 @@ import React, { useState } from 'react';
 import apiClient from '../utils/api';
 
 export default function ChatModal({ property, onClose, onChatCreated }) {
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleStartChat = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        setError('Please log in to contact the admin');
-        setLoading(false);
-        return;
-      }
+    // Validate form
+    if (!formData.name.trim()) {
+      setError('Please enter your name');
+      setLoading(false);
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError('Please enter your email');
+      setLoading(false);
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setError('Please enter your phone number');
+      setLoading(false);
+      return;
+    }
 
-      // Create chat
-      const chatRes = await apiClient.post('chats/', { property: property.id });
+    try {
+      // Create chat with visitor information
+      const chatRes = await apiClient.post('chats/', {
+        property: property.id,
+        visitor_name: formData.name,
+        visitor_email: formData.email,
+        visitor_phone: formData.phone
+      });
       const chat = chatRes.data;
 
       // Send initial message if provided
-      if (message.trim()) {
+      if (formData.message.trim()) {
         await apiClient.post(
           `chats/${chat.id}/send_message/`,
-          { message }
+          { 
+            message: formData.message,
+            sender_name: formData.name
+          }
         );
       }
 
@@ -73,13 +104,56 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
 
           <div>
             <label className="block text-sm font-bold text-krishna-700 mb-2">
+              👤 Your Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="Enter your full name"
+              className="w-full px-3 py-2 border-2 border-krishna-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-peacock-500 focus:border-transparent bg-white/80"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-krishna-700 mb-2">
+              📧 Email Address
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="your.email@example.com"
+              className="w-full px-3 py-2 border-2 border-krishna-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-peacock-500 focus:border-transparent bg-white/80"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-krishna-700 mb-2">
+              📱 Phone Number
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              placeholder="+1 (555) 123-4567"
+              className="w-full px-3 py-2 border-2 border-krishna-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-peacock-500 focus:border-transparent bg-white/80"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-krishna-700 mb-2">
               ✉️ Your Message
             </label>
             <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
               placeholder="Tell us about your interest in this property..."
-              rows="4"
+              rows="3"
               className="w-full px-3 py-2 border-2 border-krishna-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-peacock-500 focus:border-transparent bg-white/80"
             />
           </div>
@@ -97,7 +171,7 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
               disabled={loading}
               className="flex-1 btn-krishna disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium"
             >
-              {loading ? '⏳ Starting Chat...' : '💬 Start Chat'}
+              {loading ? '⏳ Sending...' : '💬 Send Inquiry'}
             </button>
           </div>
         </form>
