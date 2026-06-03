@@ -50,31 +50,31 @@ export default function ChatWindow({ chat, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-white/95 backdrop-blur rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-96 flex flex-col border-2 border-peacock-300">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-lg flex justify-between items-center">
+        <div className="bg-gradient-divine px-6 py-4 rounded-t-xl flex justify-between items-center">
           <div>
             <h2 className="text-white font-bold text-lg">{chat.property_title}</h2>
-            <p className="text-blue-100 text-sm">Chat with {chat.admin_name || 'Admin'}</p>
+            <p className="text-krishna-100 text-sm">💬 Chat with {chat.admin_name || 'Admin'}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-blue-200 text-2xl font-light"
+            className="text-white hover:text-saffron-200 text-2xl font-light transition"
           >
             ✕
           </button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-br from-krishna-50 to-peacock-50">
           {loading ? (
             <div className="flex justify-center items-center h-full">
-              <p className="text-slate-500">Loading messages...</p>
+              <p className="text-krishna-500">Loading messages...</p>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex justify-center items-center h-full">
-              <p className="text-slate-400 text-sm">No messages yet. Start the conversation!</p>
+              <p className="text-krishna-400 text-sm">No messages yet. Start the conversation!</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -85,10 +85,10 @@ export default function ChatWindow({ chat, onClose }) {
                 }`}
               >
                 <div
-                  className={`px-4 py-2 rounded-lg max-w-xs ${
+                  className={`px-4 py-2 rounded-lg max-w-xs border-2 ${
                     msg.sender === chat.user
-                      ? 'bg-blue-600 text-white rounded-br-none'
-                      : 'bg-white text-slate-900 border border-slate-200 rounded-bl-none'
+                      ? 'bg-gradient-krishna text-white border-krishna-400 rounded-br-none'
+                      : 'bg-white/80 text-krishna-900 border-peacock-300 rounded-bl-none'
                   }`}
                 >
                   <p className="text-xs font-semibold mb-1 opacity-75">
@@ -106,19 +106,19 @@ export default function ChatWindow({ chat, onClose }) {
         </div>
 
         {/* Message Input */}
-        <form onSubmit={handleSendMessage} className="border-t bg-white p-4 rounded-b-lg">
+        <form onSubmit={handleSendMessage} className="border-t-2 border-peacock-200 bg-white/80 p-4 rounded-b-xl">
           <div className="flex gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border-2 border-krishna-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-peacock-500 focus:border-transparent"
             />
             <button
               type="submit"
               disabled={!newMessage.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-lg font-medium text-sm transition"
+              className="btn-krishna disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium text-sm"
             >
               Send
             </button>

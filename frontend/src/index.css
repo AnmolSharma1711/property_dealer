@@ -2,8 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #F0F4FB 0%, #F0FDFA 100%);
+  color: #1F2F7D;
+  font-family: 'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* Peacock feather decorative elements */
+.peacock-feather {
+  position: relative;
+  overflow: hidden;
+}
+
+.peacock-feather::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Shimmer effect for headers */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 3s infinite;
+}
+
+/* Gold accent border */
+.border-gold-accent {
+  border-left: 4px solid #F59E0B;
+}
+
+/* Card hover effect */
+.card-divine {
+  transition: all 0.3s ease;
+}
+
+.card-divine:hover {
+  box-shadow: 0 12px 24px rgba(79, 119, 216, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Button styles */
+.btn-krishna {
+  @apply px-4 py-2 rounded-lg font-semibold transition-all duration-300;
+  background: linear-gradient(135deg, #4F77D8 0%, #2F47A6 100%);
+  color: white;
+}
+
+.btn-krishna:hover {
+  box-shadow: 0 8px 16px rgba(79, 119, 216, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-peacock {
+  @apply px-4 py-2 rounded-lg font-semibold transition-all duration-300;
+  background: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%);
+  color: white;
+}
+
+.btn-peacock:hover {
+  box-shadow: 0 8px 16px rgba(20, 184, 166, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Badge styles */
+.badge-saffron {
+  @apply inline-block bg-saffron-50 text-saffron-700 border border-saffron-200 px-3 py-1 text-xs font-semibold rounded-full;
+}
+
+.badge-krishna {
+  @apply inline-block bg-krishna-50 text-krishna-700 border border-krishna-200 px-3 py-1 text-xs font-semibold rounded-full;
+}
+
+/* Rating stars */
+.star-rating {
+  color: #F59E0B;
+}
+
+/* Gradient text */
+.text-gradient-divine {
+  background: linear-gradient(135deg, #8B5CF6 0%, #4F77D8 50%, #14B8A6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
