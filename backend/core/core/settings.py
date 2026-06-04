@@ -106,3 +106,20 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5174')
 if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
+# CSRF Settings for cross-domain requests
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "https://property-dealer-1-0z2d.onrender.com",
+    "https://property-dealer-gf4c.onrender.com",
+]
+
+# Expose CSRF token in response headers
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SECURE = True  # Only send over HTTPS in production
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token
+CSRF_COOKIE_SAMESITE = 'Lax'  # Allow CSRF token to be sent on cross-site requests

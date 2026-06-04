@@ -243,21 +243,35 @@ class PropertyHistoryAdmin(admin.ModelAdmin):
         return False
 
 
+class ChatMessageInline(admin.TabularInline):
+    """Inline admin for ChatMessages within Chat"""
+    model = ChatMessage
+    extra = 1  # Allow adding 1 new message
+    fields = ('sender', 'message', 'is_read', 'created_at')
+    readonly_fields = ('created_at',)
+    can_delete = True
+
+
 @admin.register(Chat)
 class ChatAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'property', 'admin', 'is_active', 'created_at', 'updated_at')
     list_filter = ('is_active', 'created_at', 'property__locality__city')
-    search_fields = ('user__username', 'property__title', 'admin__username')
+    search_fields = ('user__username', 'property__title', 'admin__username', 'visitor_name', 'visitor_email')
     readonly_fields = ('user', 'property', 'created_at', 'updated_at')
     fieldsets = (
         ('Chat Information', {
             'fields': ('user', 'property', 'admin', 'is_active')
+        }),
+        ('Visitor Information', {
+            'fields': ('visitor_name', 'visitor_email', 'visitor_phone'),
+            'classes': ('collapse',)
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
+    inlines = [ChatMessageInline]  # Add messages inline
     
     def has_add_permission(self, request):
         """Chats are created via API when users express interest in a property"""
@@ -269,13 +283,13 @@ class ChatMessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'chat', 'sender', 'created_at', 'is_read')
     list_filter = ('is_read', 'created_at', 'chat__property__locality__city')
     search_fields = ('sender__username', 'message', 'chat__property__title')
-    readonly_fields = ('chat', 'sender', 'created_at', 'message')
+    readonly_fields = ('created_at',)
     fieldsets = (
         ('Message Information', {
             'fields': ('chat', 'sender', 'message', 'is_read', 'created_at')
         }),
     )
     
+    # Allow admin to add messages
     def has_add_permission(self, request):
-        """Prevent manual creation of messages - use API instead"""
-        return False
+        return True

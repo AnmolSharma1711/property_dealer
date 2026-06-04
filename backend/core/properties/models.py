@@ -1,5 +1,11 @@
+import secrets
+
 from django.db import models
 from django.contrib.auth.models import User
+
+
+def generate_visitor_token():
+    return secrets.token_urlsafe(32)
 
 class Locality(models.Model):
     name = models.CharField(max_length=255)
@@ -91,9 +97,16 @@ class PropertyHistory(models.Model):
 
 
 class Chat(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats', null=True, blank=True)  # Allow anonymous chats
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='chats')
     admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_chats')
+    visitor_token = models.CharField(max_length=64, unique=True, blank=True, null=True, default=generate_visitor_token, editable=False)
+    
+    # Visitor information for anonymous users
+    visitor_name = models.CharField(max_length=255, blank=True, null=True)
+    visitor_email = models.EmailField(blank=True, null=True)
+    visitor_phone = models.CharField(max_length=20, blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -102,7 +115,10 @@ class Chat(models.Model):
         ordering = ['-updated_at']
 
     def __str__(self):
-        return f"Chat: {self.user.username} - {self.property.title}"
+        if self.user:
+            return f"Chat: {self.user.username} - {self.property.title}"
+        else:
+            return f"Chat: {self.visitor_name or 'Anonymous'} - {self.property.title}"
 
 
 class ChatMessage(models.Model):

@@ -48,18 +48,21 @@ class PropertyHistorySerializer(serializers.ModelSerializer):
 class ChatMessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.CharField(source='sender.username', read_only=True)
     sender_email = serializers.CharField(source='sender.email', read_only=True)
+    sender_is_superuser = serializers.BooleanField(source='sender.is_superuser', read_only=True)
 
     class Meta:
         model = ChatMessage
-        fields = ['id', 'chat', 'sender', 'sender_name', 'sender_email', 'message', 'created_at', 'is_read']
+        fields = ['id', 'chat', 'sender', 'sender_name', 'sender_email', 'sender_is_superuser', 'message', 'created_at', 'is_read']
 
 
 class ChatSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source='user.username', read_only=True)
+    user_name = serializers.CharField(source='user.username', read_only=True, allow_null=True)
     property_title = serializers.CharField(source='property.title', read_only=True)
     admin_name = serializers.CharField(source='admin.username', read_only=True, allow_null=True)
     messages = ChatMessageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Chat
-        fields = ['id', 'user', 'user_name', 'property', 'property_title', 'admin', 'admin_name', 'created_at', 'updated_at', 'is_active', 'messages']
+        fields = ['id', 'user', 'user_name', 'property', 'property_title', 'admin', 'admin_name', 
+                  'visitor_name', 'visitor_email', 'visitor_phone', 'visitor_token',
+                  'created_at', 'updated_at', 'is_active', 'messages']
