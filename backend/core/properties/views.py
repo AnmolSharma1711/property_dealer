@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+import secrets
 import threading
 import logging
 import json
@@ -116,16 +117,52 @@ class PropertyHistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
-        """Users can only see their own chats or chats they're admin for"""
+        """Authenticated users see their chats; anonymous users need a token on detail actions."""
         user = self.request.user
-        return Chat.objects.filter(user=user) | Chat.objects.filter(admin=user)
+        if user.is_authenticated:
+            if user.is_superuser:
+                return Chat.objects.all()
+            return (Chat.objects.filter(user=user) | Chat.objects.filter(admin=user)).distinct()
+        return Chat.objects.none()
+
+    def get_visitor_token(self, request):
+        return request.data.get('visitor_token') or request.query_params.get('visitor_token')
+
+    def user_can_access_chat(self, request, chat):
+        user = request.user
+        if user.is_authenticated and (
+            user.is_superuser or chat.user_id == user.id or chat.admin_id == user.id
+        ):
+            return True
+
+        visitor_token = self.get_visitor_token(request)
+        if visitor_token and chat.visitor_token:
+            return secrets.compare_digest(str(visitor_token), str(chat.visitor_token))
+
+        return False
+
+    def get_chat_by_pk(self, pk):
+        try:
+            return Chat.objects.get(pk=pk)
+        except Chat.DoesNotExist:
+            return None
+
+    def retrieve(self, request, *args, **kwargs):
+        chat = self.get_chat_by_pk(kwargs.get('pk'))
+        if not chat:
+            return Response({'error': 'Chat not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not self.user_can_access_chat(request, chat):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(chat)
+        return Response(serializer.data)
     
     def create(self, request, *args, **kwargs):
         """Create a new chat for a property when user is interested"""
-        user = request.user
         property_id = request.data.get('property')
         
         if not property_id:
@@ -136,38 +173,93 @@ class ChatViewSet(viewsets.ModelViewSet):
         except Property.DoesNotExist:
             return Response({'error': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Check if chat already exists
-        chat, created = Chat.objects.get_or_create(
+        # Get visitor info from request
+        visitor_name = request.data.get('visitor_name')
+        visitor_email = request.data.get('visitor_email')
+        visitor_phone = request.data.get('visitor_phone')
+        
+        # Create chat with visitor info (anonymous or authenticated user)
+        user = request.user if request.user.is_authenticated else None
+        
+        chat = Chat.objects.create(
             user=user,
             property=property_obj,
-            defaults={'is_active': True}
+            visitor_name=visitor_name,
+            visitor_email=visitor_email,
+            visitor_phone=visitor_phone,
+            is_active=True
         )
         
         serializer = self.get_serializer(chat)
-        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):
         """Send a message in a chat"""
-        chat = self.get_object()
-        message_text = request.data.get('message')
-        
-        if not message_text:
-            return Response({'error': 'message required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        message = ChatMessage.objects.create(
-            chat=chat,
-            sender=request.user,
-            message=message_text
-        )
-        
-        serializer = ChatMessageSerializer(message)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            print(f"DEBUG: send_message called with pk={pk}")
+            chat = self.get_chat_by_pk(pk)
+            if not chat:
+                return Response({'error': 'Chat not found'}, status=status.HTTP_404_NOT_FOUND)
+            if not self.user_can_access_chat(request, chat):
+                return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            print(f"DEBUG: Got chat: {chat.id}")
+            
+            message_text = request.data.get('message')
+            print(f"DEBUG: message_text={message_text}")
+            
+            if not message_text or not message_text.strip():
+                return Response({'error': 'message required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # For anonymous users, create or use a temporary user associated with the chat
+            from django.contrib.auth.models import User
+            from uuid import uuid4
+            
+            if request.user.is_authenticated:
+                sender = request.user
+                print(f"DEBUG: Using authenticated user {sender}")
+            else:
+                # Create temporary user for anonymous chat if needed
+                if not chat.user:
+                    # Try to get or create a temp user for this visitor
+                    temp_username = f"visitor_{uuid4().hex[:8]}"
+                    sender, _ = User.objects.get_or_create(
+                        username=temp_username,
+                        defaults={'email': chat.visitor_email or '', 'first_name': chat.visitor_name or 'Visitor'}
+                    )
+                    print(f"DEBUG: Created temp user {sender}")
+                    # Link to chat so subsequent messages use same user
+                    if not chat.user:
+                        chat.user = sender
+                        chat.save()
+                else:
+                    sender = chat.user
+                    print(f"DEBUG: Using existing chat user {sender}")
+            
+            message = ChatMessage.objects.create(
+                chat=chat,
+                sender=sender,
+                message=message_text.strip()
+            )
+            print(f"DEBUG: Message created: {message.id}")
+            
+            serializer = ChatMessageSerializer(message)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(f"ERROR in send_message: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['get'])
     def messages(self, request, pk=None):
         """Get all messages in a chat"""
-        chat = self.get_object()
+        chat = self.get_chat_by_pk(pk)
+        if not chat:
+            return Response({'error': 'Chat not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not self.user_can_access_chat(request, chat):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
         messages = chat.messages.all()
         
         # Mark all unread messages as read for the current user

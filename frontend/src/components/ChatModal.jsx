@@ -50,6 +50,9 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
         visitor_phone: formData.phone
       });
       const chat = chatRes.data;
+      if (chat.visitor_token) {
+        localStorage.setItem(`chatVisitorToken:${chat.id}`, chat.visitor_token);
+      }
 
       // Send initial message if provided
       if (formData.message.trim()) {
@@ -57,7 +60,8 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
           `chats/${chat.id}/send_message/`,
           { 
             message: formData.message,
-            sender_name: formData.name
+            sender_name: formData.name,
+            visitor_token: chat.visitor_token
           }
         );
       }
