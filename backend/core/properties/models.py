@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import uuid
 
 class Locality(models.Model):
     name = models.CharField(max_length=255)
@@ -91,9 +92,13 @@ class PropertyHistory(models.Model):
 
 
 class Chat(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats', null=True, blank=True)
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='chats')
     admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_chats')
+    visitor_name = models.CharField(max_length=150, blank=True)
+    visitor_email = models.EmailField(blank=True)
+    visitor_phone = models.CharField(max_length=40, blank=True)
+    access_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -102,12 +107,13 @@ class Chat(models.Model):
         ordering = ['-updated_at']
 
     def __str__(self):
-        return f"Chat: {self.user.username} - {self.property.title}"
+        participant = self.user.username if self.user else self.visitor_name or 'Visitor'
+        return f"Chat: {participant} - {self.property.title}"
 
 
 class ChatMessage(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)

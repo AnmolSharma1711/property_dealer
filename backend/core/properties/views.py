@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -116,16 +116,27 @@ class PropertyHistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def _chat_token(self):
+        return self.request.headers.get('X-Chat-Token')
+
+    def _is_admin_request(self):
+        return bool(self.request.user and self.request.user.is_authenticated)
     
     def get_queryset(self):
-        """Users can only see their own chats or chats they're admin for"""
+        """Limit public access to the chat identified by its private access token."""
         user = self.request.user
-        return Chat.objects.filter(user=user) | Chat.objects.filter(admin=user)
+        if user and user.is_authenticated:
+            return Chat.objects.filter(user=user) | Chat.objects.filter(admin=user)
+        token = self._chat_token()
+        if token:
+            return Chat.objects.filter(user__isnull=True, access_token=token)
+        return Chat.objects.none()
     
     def create(self, request, *args, **kwargs):
         """Create a new chat for a property when user is interested"""
-        user = request.user
+        user = request.user if request.user.is_authenticated else None
         property_id = request.data.get('property')
         
         if not property_id:
@@ -135,13 +146,31 @@ class ChatViewSet(viewsets.ModelViewSet):
             property_obj = Property.objects.get(id=property_id)
         except Property.DoesNotExist:
             return Response({'error': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        visitor_name = str(request.data.get('visitor_name', '')).strip()
+        visitor_email = str(request.data.get('visitor_email', '')).strip()
+        visitor_phone = str(request.data.get('visitor_phone', '')).strip()
+        if user is None and (not visitor_name or not visitor_email or not visitor_phone):
+            return Response(
+                {'error': 'Name, email, and phone are required for visitor chat.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         
-        # Check if chat already exists
-        chat, created = Chat.objects.get_or_create(
-            user=user,
-            property=property_obj,
-            defaults={'is_active': True}
-        )
+        if user is None:
+            chat = Chat.objects.create(
+                property=property_obj,
+                visitor_name=visitor_name,
+                visitor_email=visitor_email,
+                visitor_phone=visitor_phone,
+                is_active=True,
+            )
+            created = True
+        else:
+            chat, created = Chat.objects.get_or_create(
+                user=user,
+                property=property_obj,
+                defaults={'is_active': True},
+            )
         
         serializer = self.get_serializer(chat)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
@@ -154,10 +183,13 @@ class ChatViewSet(viewsets.ModelViewSet):
         
         if not message_text:
             return Response({'error': 'message required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.is_authenticated and not self._chat_token():
+            return Response({'error': 'Chat access token required.'}, status=status.HTTP_403_FORBIDDEN)
         
         message = ChatMessage.objects.create(
             chat=chat,
-            sender=request.user,
+            sender=request.user if request.user.is_authenticated else None,
             message=message_text
         )
         
@@ -180,6 +212,8 @@ class ChatViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def assign_admin(self, request, pk=None):
         """Assign an admin to handle the chat"""
+        if not self._is_admin_request():
+            return Response({'error': 'Admin authentication required.'}, status=status.HTTP_403_FORBIDDEN)
         chat = self.get_object()
         admin_id = request.data.get('admin_id')
         
@@ -201,6 +235,8 @@ class ChatViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
         """Close a chat"""
+        if not self._is_admin_request():
+            return Response({'error': 'Admin authentication required.'}, status=status.HTTP_403_FORBIDDEN)
         chat = self.get_object()
         chat.is_active = False
         chat.save()
