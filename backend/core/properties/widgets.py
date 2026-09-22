@@ -71,49 +71,75 @@ class LocationAutocompleteWidget(forms.TextInput):
         <style>
             .location-autocomplete-container {{
                 position: relative;
+                width: 100%;
+                max-width: 520px;
             }}
             
             .location-autocomplete-dropdown {{
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: white;
-                border: 1px solid #ddd;
-                border-top: none;
-                max-height: 300px;
-                overflow-y: auto;
-                z-index: 1000;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                position: fixed !important;
+                top: auto;
+                left: auto;
+                width: min(520px, calc(100vw - 32px));
+                margin: 0;
+                background: #ffffff;
+                border: 1px solid #c7cdd3;
+                border-radius: 4px;
+                display: block !important;
+                height: auto !important;
+                min-height: 48px;
+                max-height: min(320px, calc(100vh - 32px));
+                overflow-x: hidden;
+                overflow-y: auto !important;
+                z-index: 1100 !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
             }}
             
             .location-autocomplete-item {{
-                padding: 10px;
-                border-bottom: 1px solid #eee;
+                display: block;
+                padding: 10px 12px;
+                border-bottom: 1px solid #edf0f2;
                 cursor: pointer;
-                transition: background-color 0.2s;
+                box-sizing: border-box;
+                height: auto !important;
+                min-height: 44px;
+                color: #202124 !important;
+                line-height: 1.35;
+                transition: background-color 0.15s ease;
+            }}
+
+            .location-autocomplete-item:last-child {{
+                border-bottom: 0;
             }}
             
             .location-autocomplete-item:hover {{
-                background-color: #f0f0f0;
+                background-color: #f1f5f9;
             }}
             
             .location-autocomplete-item-name {{
-                font-weight: 500;
-                color: #333;
+                display: block;
+                font-weight: 600;
+                color: #202124;
+                white-space: normal;
+                overflow-wrap: anywhere;
             }}
             
             .location-autocomplete-item-address {{
-                font-size: 0.9em;
-                color: #666;
-                margin-top: 4px;
+                display: block;
+                margin-top: 3px;
+                color: #5f6368;
+                font-size: 12px;
+                white-space: normal;
+                overflow-wrap: anywhere;
             }}
             
             .api-status-message {{
-                padding: 8px;
-                margin-top: 4px;
+                display: inline-block;
+                max-width: 100%;
+                box-sizing: border-box;
+                padding: 6px 9px;
+                margin-top: 6px;
                 border-radius: 4px;
-                font-size: 0.9em;
+                font-size: 12px;
             }}
             
             .api-status-message.error {{
@@ -152,6 +178,12 @@ class LocationAutocompleteWidget(forms.TextInput):
                 margin-top: 8px;
                 font-size: 0.85em;
                 color: #2c3e50;
+            }}
+
+            @media (max-width: 600px) {{
+                .location-autocomplete-dropdown {{
+                    width: calc(100vw - 32px);
+                }}
             }}
         </style>
         
@@ -231,8 +263,24 @@ class LocationAutocompleteWidget(forms.TextInput):
                         }}
                         
                         container.appendChild(dropdown);
+                        positionDropdown();
                         isOpen = true;
                         console.log('[Autocomplete] Dropdown shown with ' + items.length + ' items');
+                    }}
+
+                    function positionDropdown() {{
+                        if (!dropdown) return;
+
+                        const inputRect = inputElement.getBoundingClientRect();
+                        const viewportPadding = 16;
+                        const availableWidth = window.innerWidth - inputRect.left - viewportPadding;
+                        const dropdownWidth = Math.min(520, Math.max(inputRect.width, 280), availableWidth);
+                        const availableHeight = window.innerHeight - inputRect.bottom - viewportPadding;
+
+                        dropdown.style.left = Math.max(viewportPadding, inputRect.left) + 'px';
+                        dropdown.style.top = (inputRect.bottom + 4) + 'px';
+                        dropdown.style.width = Math.max(280, dropdownWidth) + 'px';
+                        dropdown.style.maxHeight = Math.max(120, Math.min(320, availableHeight)) + 'px';
                     }}
                     
                     function hideDropdown() {{
@@ -360,6 +408,9 @@ class LocationAutocompleteWidget(forms.TextInput):
                             hideDropdown();
                         }}
                     }});
+
+                    window.addEventListener('resize', positionDropdown);
+                    window.addEventListener('scroll', positionDropdown, true);
                     
                     console.log('[Autocomplete] Initialized successfully');
                     

@@ -25,11 +25,16 @@ def enrich_locality_pipeline(locality_id):
         
         serp_key = os.getenv("SERPAPI_API_KEY")
         groq_key = os.getenv("GROQ_API_KEY")
+        groq_model = os.getenv("GROQ_MODEL")
         
-        if not serp_key or not groq_key:
+        if not serp_key or not groq_key or not groq_model:
             with open(debug_file, "a") as f:
-                f.write(f"[ERROR] Missing API keys: SERPAPI={bool(serp_key)}, GROQ={bool(groq_key)}\n")
-            return f"Missing API keys"
+                f.write(
+                    "[ERROR] Missing configuration: "
+                    f"SERPAPI={bool(serp_key)}, GROQ={bool(groq_key)}, "
+                    f"GROQ_MODEL={bool(groq_model)}\n"
+                )
+            return "Missing API configuration"
 
         # 1. Query SerpAPI for multiple POI categories like Google Maps
         with open(debug_file, "a") as f:
@@ -128,7 +133,7 @@ def enrich_locality_pipeline(locality_id):
         )
         
         payload = {
-            "model": "llama-3.1-8b-instant",
+            "model": groq_model,
             "messages": [
                 {"role": "system", "content": system_instructions},
                 {"role": "user", "content": f"Locality: {locality.name}, {locality.city}. Surrounding Places: {json.dumps(cleaned_places)}"}
@@ -139,7 +144,7 @@ def enrich_locality_pipeline(locality_id):
         groq_res = requests.post(groq_url, json=payload, headers=headers, timeout=20)
         with open(debug_file, "a") as f:
             f.write(f"[INFO] Groq response status: {groq_res.status_code}\n")
-            f.write(f"[INFO] Groq response text: {groq_res.text}\n")
+        groq_res.raise_for_status()
         
         try:
             groq_json = groq_res.json()
