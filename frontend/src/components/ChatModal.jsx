@@ -50,6 +50,7 @@ export default function ChatModal({ property, onClose, onChatCreated }) {
         visitor_phone: formData.phone
       });
       const chat = chatRes.data;
+      localStorage.setItem('chatAccessToken', chat.access_token);
 
       // Send initial message if provided
       if (formData.message.trim()) {

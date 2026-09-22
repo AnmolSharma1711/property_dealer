@@ -41,8 +41,12 @@ const apiClient = axios.create({
 // Add auth token to requests if available
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
+  const chatToken = localStorage.getItem('chatAccessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (chatToken && config.url?.includes('chats/')) {
+    config.headers['X-Chat-Token'] = chatToken;
   }
   return config;
 });
